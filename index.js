@@ -26,15 +26,15 @@ bot.on('spawn', () => {
     console.log('🔐 Sent login command');
   }, 3000);
 
-  // 🎁 Give blocks (if allowed)
+  // 🎁 Give blocks
   setTimeout(() => {
     bot.chat('/give PreXAFKBot stone 64');
     console.log('🎁 Sent /give stone command');
   }, 6000);
 
-  // ⛏️ Start anti-idle action
+  // ⛏️ Start anti-idle
   setTimeout(() => {
-    bot.setQuickBarSlot(0); // Select 1st hotbar slot
+    bot.setQuickBarSlot(0);
     console.log('🎯 Selected slot 0');
     startAntiIdleLoop();
   }, 9000);
@@ -43,27 +43,31 @@ bot.on('spawn', () => {
 function startAntiIdleLoop() {
   setInterval(async () => {
     try {
-      const basePos = bot.entity.position.offset(0, -1, 0); // block below
-      const referenceBlock = bot.blockAt(basePos);
+      const forward = bot.entity.yaw;
+      const direction = bot.entity.position.offset(
+        Math.round(Math.cos(forward)),
+        0,
+        Math.round(Math.sin(forward))
+      );
+      const referenceBlock = bot.blockAt(direction.offset(0, -1, 0)); // block to place against
 
-      // 🧱 Try placing block above
+      // 🧱 Place block in front
       if (referenceBlock) {
-        await bot.placeBlock(referenceBlock, vec3(0, 1, 0));
-        console.log('🧱 Placed block');
+        await bot.placeBlock(referenceBlock, vec3(0, 1, 0)); // place block above that surface
+        console.log('🧱 Placed block in front');
       }
 
       await bot.waitForTicks(5);
 
-      // ⛏️ Dig the block just placed
-      const above = bot.blockAt(basePos.offset(0, 1, 0));
-      if (above && above.name !== 'bedrock') {
-        await bot.dig(above);
-        console.log('⛏️ Broke block:', above.name);
+      const placedBlock = bot.blockAt(direction);
+      if (placedBlock && placedBlock.name !== 'bedrock') {
+        await bot.dig(placedBlock);
+        console.log('⛏️ Broke block:', placedBlock.name);
       } else {
-        console.log('❌ Nothing to break or unbreakable block');
+        console.log('❌ Nothing to break in front');
       }
 
-      // ⬆️ Jump to avoid idle kicks
+      // ⬆️ Jump
       bot.setControlState('jump', true);
       await bot.waitForTicks(5);
       bot.setControlState('jump', false);
@@ -71,7 +75,7 @@ function startAntiIdleLoop() {
     } catch (err) {
       console.log('⚠️ Error in anti-idle loop:', err.message);
     }
-  }, 10000); // every 10 seconds
+  }, 10000);
 }
 
 bot.on('end', () => console.log('❌ Bot disconnected'));
