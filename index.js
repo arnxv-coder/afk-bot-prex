@@ -10,8 +10,8 @@ app.listen(port, () => console.log(`Web server running on port ${port}`));
 
 // 🤖 Create bot
 const bot = mineflayer.createBot({
-  host: 'SynYourSMP.aternos.me',
-  port: 12345,
+  host: 'SyncGangSMP.aternos.me',
+  port: 49432,
   username: 'PreXAFKBot',
   auth: 'offline',
   version: '1.21.6'
@@ -22,13 +22,13 @@ bot.on('spawn', () => {
 
   // 🔐 Login to AuthMe
   setTimeout(() => {
-    bot.chat('/login SyncGangIsDeadly');
+    bot.chat('/login IMNOOB');
     console.log('🔐 Sent login command');
   }, 3000);
 
   // 🎁 Give 64 stone blocks
   setTimeout(() => {
-    bot.chat('/give SyncSMP stone 64');
+    bot.chat('/give PreXAFKBot stone 64');
     console.log('🎁 Sent /give stone command');
   }, 6000);
 
