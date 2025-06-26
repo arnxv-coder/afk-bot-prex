@@ -32,50 +32,72 @@ bot.on('spawn', () => {
     console.log('🎁 Sent /give stone command');
   }, 6000);
 
-  // ⛏️ Start anti-idle
+  // Start everything
   setTimeout(() => {
     bot.setQuickBarSlot(0);
     console.log('🎯 Selected slot 0');
     startAntiIdleLoop();
+    startAfkChat();
   }, 9000);
 });
 
+// 🔁 Place, break, jump
 function startAntiIdleLoop() {
-  setInterval(async () => {
+  setInterval(() => {
     try {
-      const forward = bot.entity.yaw;
-      const direction = bot.entity.position.offset(
-        Math.round(Math.cos(forward)),
-        0,
-        Math.round(Math.sin(forward))
-      );
-      const referenceBlock = bot.blockAt(direction.offset(0, -1, 0)); // block to place against
+      const yaw = bot.entity.yaw;
+      const dirX = Math.round(Math.cos(yaw));
+      const dirZ = Math.round(Math.sin(yaw));
+      const frontPos = bot.entity.position.offset(dirX, 0, dirZ);
+      const referenceBlock = bot.blockAt(frontPos.offset(0, -1, 0));
 
-      // 🧱 Place block in front
+      // Place block
       if (referenceBlock) {
-        await bot.placeBlock(referenceBlock, vec3(0, 1, 0)); // place block above that surface
+        bot.placeBlock(referenceBlock, vec3(dirX, 1, dirZ)).catch(e => {
+          console.log('⚠️ Place error:', e.message);
+        });
         console.log('🧱 Placed block in front');
       }
 
-      await bot.waitForTicks(5);
+      // Break after delay
+      setTimeout(() => {
+        const placed = bot.blockAt(frontPos);
+        if (placed?.name !== 'air' && placed?.name !== 'bedrock') {
+          bot.dig(placed).catch(e => {
+            console.log('⚠️ Dig error:', e.message);
+          });
+          console.log('⛏️ Broke block in front');
+        }
+      }, 1500);
 
-      const placedBlock = bot.blockAt(direction);
-      if (placedBlock && placedBlock.name !== 'bedrock') {
-        await bot.dig(placedBlock);
-        console.log('⛏️ Broke block:', placedBlock.name);
-      } else {
-        console.log('❌ Nothing to break in front');
-      }
-
-      // ⬆️ Jump
+      // Jump
       bot.setControlState('jump', true);
-      await bot.waitForTicks(5);
-      bot.setControlState('jump', false);
-      console.log('⬆️ Jumped');
+      setTimeout(() => {
+        bot.setControlState('jump', false);
+        console.log('⬆️ Jumped');
+      }, 500);
+
     } catch (err) {
-      console.log('⚠️ Error in anti-idle loop:', err.message);
+      console.log('⚠️ Anti-idle loop error:', err.message);
     }
-  }, 10000);
+  }, 8000);
+}
+
+// 💬 AFK chat every 30 seconds
+function startAfkChat() {
+  const messages = [
+    "Still AFK 👻",
+    "PreXAFKBot chilling here 😎",
+    "Grinding air like a pro 💨",
+    "Just placed and broke a block 🧱⛏️",
+    "Not a ghost, just very patient 👀"
+  ];
+
+  setInterval(() => {
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    bot.chat(msg);
+    console.log(`💬 Sent AFK message: ${msg}`);
+  }, 30000);
 }
 
 bot.on('end', () => console.log('❌ Bot disconnected'));
